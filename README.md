@@ -19,7 +19,7 @@ A small app to keep track of money you lend to friends. It runs online, so you o
 
 | Part | Where it runs | Built with |
 | --- | --- | --- |
-| App (`app/`) | Firebase Hosting (free) | React Native + Expo, built as a web app |
+| App (`app/`) | Firebase Hosting (free) | React Native, built as a web app |
 | Backend (`backend/`) | Render (free) | Node.js, TypeScript, Express |
 | Database | Render PostgreSQL (free) | PostgreSQL |
 
