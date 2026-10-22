@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // Where the backend runs. On a real phone, use your computer's LAN address,
 // for example EXPO_PUBLIC_API_URL=http://192.168.1.20:4000 npx expo start
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.56.1:4000';
@@ -56,7 +58,8 @@ async function call<T>(path: string, init: RequestInit = {}, token?: string): Pr
 }
 
 export const api = {
-  requestOtp: (phone: string) => call<{ message: string }>('/auth/request-otp', { method: 'POST', body: JSON.stringify({ phone }) }),
+  requestOtp: (phone: string) =>
+    call<{ message: string; demoOtp?: string }>('/auth/request-otp', { method: 'POST', body: JSON.stringify({ phone }) }),
 
   verifyOtp: (phone: string, otp: string) =>
     call<{ token: string }>('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) }),
@@ -68,7 +71,7 @@ export const api = {
   markRepaid: (token: string, id: number) => call<Loan>(`/loans/${id}/repaid`, { method: 'PATCH' }, token),
 
   // Sent as form data so a receipt photo can go along with the entry.
-  addLoan: (token: string, loan: NewLoan) => {
+  addLoan: async (token: string, loan: NewLoan) => {
     const form = new FormData();
     form.append('friendName', loan.friendName);
     form.append('amount', loan.amount);
@@ -76,8 +79,14 @@ export const api = {
     if (loan.receipt) {
       const type = loan.receipt.mimeType ?? 'image/jpeg';
       const name = loan.receipt.fileName ?? `receipt.${type.split('/')[1]}`;
-      // React Native's FormData takes this { uri, name, type } object for files.
-      form.append('receipt', { uri: loan.receipt.uri, name, type } as unknown as Blob);
+      if (Platform.OS === 'web') {
+        // In a browser the picked photo is a blob: URL, so turn it into a real file.
+        const blob = await (await fetch(loan.receipt.uri)).blob();
+        form.append('receipt', blob, name);
+      } else {
+        // React Native's FormData takes this { uri, name, type } object for files.
+        form.append('receipt', { uri: loan.receipt.uri, name, type } as unknown as Blob);
+      }
     }
     return call<Loan>('/loans', { method: 'POST', body: form }, token);
   },

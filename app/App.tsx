@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import * as SecureStore from 'expo-secure-store';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AddLoanScreen } from './src/screens/AddLoanScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { colors } from './src/theme';
-
-const TOKEN_KEY = 'miniledger-token';
+import { tokenStore } from './src/tokenStore';
 
 // Three screens, so a simple state switch is enough instead of a navigation library.
 export default function App() {
@@ -17,19 +15,20 @@ export default function App() {
 
   // Stay logged in between app launches.
   useEffect(() => {
-    SecureStore.getItemAsync(TOKEN_KEY)
+    tokenStore
+      .get()
       .then((t) => setToken(t))
       .catch(() => setToken(null));
   }, []);
 
   const login = useCallback((t: string) => {
-    SecureStore.setItemAsync(TOKEN_KEY, t).catch(() => {});
+    tokenStore.set(t).catch(() => {});
     setToken(t);
     setScreen('home');
   }, []);
 
   const logout = useCallback(() => {
-    SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    tokenStore.clear().catch(() => {});
     setToken(null);
   }, []);
 

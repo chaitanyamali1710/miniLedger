@@ -12,6 +12,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string) => voi
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
 
   async function sendOtp() {
     const problem = checkPhone(phone);
@@ -19,7 +20,9 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string) => voi
     setError(null);
     setLoading(true);
     try {
-      await api.requestOtp(phone);
+      const res = await api.requestOtp(phone);
+      setDemoOtp(res.demoOtp ?? null);
+      setOtp(res.demoOtp ?? '');
       setStep('otp');
     } catch (e) {
       setError((e as Error).message);
@@ -64,7 +67,14 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string) => voi
           </>
         ) : (
           <>
-            <Text style={styles.hint}>We sent a 6 digit code to {phone}. (For now it is printed in the server log.)</Text>
+            {demoOtp ? (
+              <View style={styles.demo}>
+                <Text style={styles.demoLabel}>Demo mode: your OTP is</Text>
+                <Text style={styles.demoCode}>{demoOtp}</Text>
+              </View>
+            ) : (
+              <Text style={styles.hint}>We sent a 6 digit code to {phone}. (For now it is printed in the server log.)</Text>
+            )}
             <Field
               label="OTP"
               placeholder="123456"
@@ -84,6 +94,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string) => voi
               onPress={() => {
                 setStep('phone');
                 setOtp('');
+                setDemoOtp(null);
                 setError(null);
               }}
             />
@@ -100,4 +111,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 34, fontWeight: '800', color: colors.text },
   subtitle: { fontSize: 16, color: colors.muted, marginTop: 4, marginBottom: 32 },
   hint: { fontSize: 14, color: colors.muted, marginBottom: 16 },
+  demo: { backgroundColor: '#EAF1FE', borderRadius: 10, padding: 14, marginBottom: 16, alignItems: 'center' },
+  demoLabel: { fontSize: 14, color: colors.muted },
+  demoCode: { fontSize: 30, fontWeight: '800', letterSpacing: 6, color: colors.primary, marginTop: 4 },
 });

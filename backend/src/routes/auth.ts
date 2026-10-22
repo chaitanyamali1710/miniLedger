@@ -21,7 +21,11 @@ authRouter.post('/request-otp', async (req, res) => {
   );
 
   console.log(`[mock SMS] OTP for ${phone} is ${code}`);
-  res.json({ message: 'OTP sent. Check the server log.' });
+  if (config.showOtpInResponse) {
+    res.json({ message: 'Demo mode: your OTP is shown on screen.', demoOtp: code });
+  } else {
+    res.json({ message: 'OTP sent. Check the server log.' });
+  }
 });
 
 // Step 2: check the code, create the user if new, and return a login token.

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, type NewLoan } from '../api';
 import { Button } from '../components/Button';
 import { Field } from '../components/Field';
+import { showMessage } from '../dialogs';
 import { isoDate } from '../format';
 import { colors } from '../theme';
 import { checkLoan } from '../validation';
@@ -30,7 +31,7 @@ export function AddLoanScreen({ token, onDone, onCancel }: Props) {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow access in Settings to attach a receipt.');
+      showMessage('Permission needed', 'Allow access in Settings to attach a receipt.');
       return;
     }
     const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.6 };
@@ -52,7 +53,7 @@ export function AddLoanScreen({ token, onDone, onCancel }: Props) {
       await api.addLoan(token, { friendName: friendName.trim(), amount: amount.trim(), dueDate, receipt });
       onDone();
     } catch (e) {
-      Alert.alert('Could not save', (e as Error).message);
+      showMessage('Could not save', (e as Error).message);
       setSaving(false);
     }
   }

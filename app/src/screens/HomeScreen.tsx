@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, api, type Loan, type Summary } from '../api';
 import { Button } from '../components/Button';
+import { ReceiptImage } from '../components/ReceiptImage';
+import { confirm, showMessage } from '../dialogs';
 import { LoanItem } from '../components/LoanItem';
 import { SummaryCard } from '../components/SummaryCard';
 import { money } from '../format';
@@ -41,21 +43,15 @@ export function HomeScreen({ token, onAdd, onLogout }: Props) {
     load();
   }, [load]);
 
-  function confirmRepaid(loan: Loan) {
-    Alert.alert('Mark as repaid?', `${loan.friendName} paid back ${money(loan.amount)}.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Yes, repaid',
-        onPress: async () => {
-          try {
-            await api.markRepaid(token, loan.id);
-            load();
-          } catch (e) {
-            Alert.alert('Could not update', (e as Error).message);
-          }
-        },
-      },
-    ]);
+  async function confirmRepaid(loan: Loan) {
+    const ok = await confirm('Mark as repaid?', `${loan.friendName} paid back ${money(loan.amount)}.`, 'Yes, repaid');
+    if (!ok) return;
+    try {
+      await api.markRepaid(token, loan.id);
+      load();
+    } catch (e) {
+      showMessage('Could not update', (e as Error).message);
+    }
   }
 
   return (
@@ -91,7 +87,7 @@ export function HomeScreen({ token, onAdd, onLogout }: Props) {
       <Modal visible={receiptFor !== null} transparent animationType="fade" onRequestClose={() => setReceiptFor(null)}>
         <Pressable style={styles.modalBg} onPress={() => setReceiptFor(null)}>
           {receiptFor ? (
-            <Image source={api.receiptSource(token, receiptFor.id)} style={styles.receipt} resizeMode="contain" />
+            <ReceiptImage token={token} loanId={receiptFor.id} style={styles.receipt} />
           ) : null}
           <Text style={styles.modalHint}>Tap anywhere to close</Text>
         </Pressable>

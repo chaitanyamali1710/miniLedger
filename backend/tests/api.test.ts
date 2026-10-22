@@ -68,6 +68,26 @@ describe('auth', () => {
     await request(app).post('/auth/verify-otp').send({ phone: '9876543210', otp: '111111' }).expect(429);
   });
 
+  it('returns the OTP in demo mode', async () => {
+    config.showOtpInResponse = true;
+    try {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      const res = await request(app).post('/auth/request-otp').send({ phone: '9876543210' }).expect(200);
+      vi.restoreAllMocks();
+      expect(res.body.demoOtp).toMatch(/^\d{6}$/);
+      await request(app).post('/auth/verify-otp').send({ phone: '9876543210', otp: res.body.demoOtp }).expect(200);
+    } finally {
+      config.showOtpInResponse = false;
+    }
+  });
+
+  it('hides the OTP when demo mode is off', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const res = await request(app).post('/auth/request-otp').send({ phone: '9876543210' }).expect(200);
+    vi.restoreAllMocks();
+    expect(res.body.demoOtp).toBeUndefined();
+  });
+
   it('validates the phone number', async () => {
     const res = await request(app).post('/auth/request-otp').send({ phone: 'abc' }).expect(400);
     expect(res.body.details[0].field).toBe('phone');
